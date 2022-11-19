@@ -108,15 +108,13 @@ let resp_counter = 0;
 
 const ROUTER = Router();
 
-/* TODO
+
 ROUTER.get("/api", (req, res) => {
 	resp_counter ++;
 	console.log("Get request", resp_counter);
-	if(resp_counter > 3) {
-		insertIntoTable(test_db, resp_counter, "Name " + resp_counter, 'T');
-	}
+	
 	const temp = res.send({ response: test_response, count: resp_counter }).status(200);
-});*/
+});
 
 
 
@@ -138,17 +136,16 @@ ROUTER.post("/add-data", (req, res) => {
 	// TODO const extension = headers['content-type'].split('/')[1];
 	
 	// Set initial file path
-	/* TODO	let filepath = './recipe-images/' + filename + '.' + extension;
+	/* TODO	let filepath = './' + filename + '.' + extension;
 
 	// Initialize the number of duplicate file paths that exist
 	let numDuplicates = 0;
 	
 	// Add duplicate number to filename if the file already exists
-	// TODO Probably want to remove this during actual implementation since duplicate file names should indicate modifying an image
 	while(existsSync(filepath)) {
 		// A duplicate was found, so generate a new file path/name
 		numDuplicates ++;
-		filepath = `./recipe-images/${filename}_${numDuplicates}.${extension}`;
+		filepath = `./${filename}_${numDuplicates}.${extension}`;
 		
 		// TODO console.log(filepath);
 	}
@@ -161,6 +158,8 @@ ROUTER.post("/add-data", (req, res) => {
 	// Event handler that runs when data is received from the request
 	req.on('data', (data) => {
 		console.log('received data: ', data);
+		
+		// TODO insertIntoTable(test_db, resp_counter, "Name " + resp_counter, 'T');
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
