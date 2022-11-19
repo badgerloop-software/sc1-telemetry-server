@@ -120,7 +120,7 @@ ROUTER.get("/api", (req, res) => {
 
 // HTTP request for uploading images to the server
 ROUTER.post("/add-data", (req, res) => {
-	console.log('add-data request');	
+	console.log('add-data request');
 
 	// Get headers
 	const headers = req.headers;
@@ -129,8 +129,10 @@ ROUTER.post("/add-data", (req, res) => {
 	
 	console.log(headers);
 	
-	// Get file name from headers
-	// TODO const filename = headers['content-disposition'].split('"')[1];
+	// TODO Get session beginning timestamp from headers
+	const sessionTime = headers['content-disposition'].split('=')[1];
+
+	console.log(sessionTime);
 	
 	// Get file extension from headers
 	// TODO const extension = headers['content-type'].split('/')[1];
