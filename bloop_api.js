@@ -47,7 +47,7 @@ function createTable(db) {
 	db.exec(`
 		create table testTable (
 			timestamp	TEXT	PRIMARY KEY	NOT NULL,
-			payload		BLOB	text not null
+			payload		BLOB	NOT NULL
 		);`
 		/* TODO insert into testTable (timestamp, payload)
 			values
@@ -62,8 +62,8 @@ function createTable(db) {
 
 function insertIntoTable(db, ts, pl) {
 	db.exec(`
-		insert into testTable (ts, pl)
-			values ('${ts}', ${pl});
+		insert into testTable (timestamp, payload)
+			values ('${ts}', 1);`, () => {/*${pl});
 		`, () => {
 			/* TODO console.log(`
 			insert into testTable (test_id, name, test_flag)
@@ -161,7 +161,7 @@ ROUTER.post("/add-data", (req, res) => {
 	req.on('data', (data) => {
 		console.log('received data: ', data);
 		
-		// TODO insertIntoTable(test_db, resp_counter, "Name " + resp_counter, 'T');
+		insertIntoTable(test_db, sessionTime, data);
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
