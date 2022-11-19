@@ -43,30 +43,19 @@ function createDatabase() {
 
 function createTable(db) {
 	// TODO Maybe change TEXT to INTEGER for the time so that we can use UNIX timestamps (the curr_msec in sc1-driver-io)??
-	db.exec(`
-		create table testTable (
-			timestamp	TEXT	PRIMARY KEY	NOT NULL,
+	db.exec(
+		`create table testTable (
+			timestamp	INTEGER	PRIMARY KEY	NOT NULL,
 			payload		BLOB	NOT NULL
-		);`
-		/* TODO insert into testTable (timestamp, payload)
-			values
-				('1', ),
-				(2, 'Name 2', 'F'),
-				(3, 'Name 3', 'F');
-		`*/, () => {
+		);`,
+		() => {
 			console.log('Created the table');
-			// TODO runQueries(db);
 	});
 }
 
 function insertIntoTable(db, ts, pl) {
 	console.log('Inserting entry');
-	db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {/*${pl});
-		`, () => {
-			/* TODO console.log(`
-			insert into testTable (test_id, name, test_flag)
-				values (${id}, '${name}', '${flag}');
-			`);*/
+	db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {
 			runQueries(db);
 	});
 	/*db.exec(`
@@ -133,9 +122,7 @@ ROUTER.post("/add-data", (req, res) => {
 	// Get headers
 	const headers = req.headers;
 	
-	// TODO console.log(req);
-	
-	console.log(headers);
+	// TODO console.log(headers);
 	
 	// TODO Get session beginning timestamp from headers
 	const sessionTime = headers['content-disposition'].split('=')[1];
@@ -167,9 +154,9 @@ ROUTER.post("/add-data", (req, res) => {
 
 	// Event handler that runs when data is received from the request
 	req.on('data', (data) => {
-		console.log('received data: ', data);
+		// TODO console.log('received data: ', data);
 		
-		insertIntoTable(test_db, sessionTime, data);
+		insertIntoTable(test_db, parseInt(sessionTime), data);
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
@@ -186,6 +173,20 @@ ROUTER.post("/add-data", (req, res) => {
 	// TODO console.log(req);
 	console.log(req.headers);
 	console.log(filepath);*/
+});
+
+
+ROUTER.get("/get-entry-count", (req, res) => {
+	test_db.all(`select count(timestamp) as "field1", null as "field2" from testTable union select max(timestamp) as "field1", payload as "field2" from testTable;`, (err, rows) => {
+		// TODO console.log('count(timestamp):', rows[0]['count(timestamp)']);
+		
+		// TODO const temp = res.send({ response: test_response, count: rows[0]['count(timestamp)'] }).status(200);
+		
+		console.log('count(timestamp):', rows[0]['field1']);
+
+		const temp = res.send({ response: test_response, count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
+	});
+	
 });
 
 
