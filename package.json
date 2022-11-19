@@ -1,0 +1,22 @@
+{
+  "name": "recipe-finder-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "echo -e \"\\n\\`npm start\\` is not implemented.\\n\\nUse \\`npm run start-[fg|bg]\\` instead.\\n\" && exit 0",
+	"start-fg": "./scripts/start_server.sh --foreground -w .",
+	"start-bg": "./scripts/start_server.sh -w .",
+	"start-fg-unsafe": "node ./index.js",
+	"start-bg-unsafe": "nohup node ./index.js > server_logs/$(date +'%m-%d-%Y_%H-%M-%S').log 2>server_logs/$(date +'%m-%d-%Y_%H-%M-%S')_error.log & echo $! > server_pid",
+	"kill-server": "./scripts/kill_server.sh -w .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "James Vollmer",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.1",
+    "sqlite3": "^5.1.2"
+  }
+}
