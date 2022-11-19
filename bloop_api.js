@@ -43,7 +43,6 @@ function createDatabase() {
 
 function createTable(db) {
 	// TODO Maybe change TEXT to INTEGER for the time so that we can use UNIX timestamps (the curr_msec in sc1-driver-io)??
-	// 		
 	db.exec(`
 		create table testTable (
 			timestamp	TEXT	PRIMARY KEY	NOT NULL,
@@ -61,9 +60,8 @@ function createTable(db) {
 }
 
 function insertIntoTable(db, ts, pl) {
-	db.exec(`
-		insert into testTable (timestamp, payload)
-			values ('${ts}', 1);`, () => {/*${pl});
+	console.log('Inserting entry');
+	db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {/*${pl});
 		`, () => {
 			/* TODO console.log(`
 			insert into testTable (test_id, name, test_flag)
@@ -71,6 +69,16 @@ function insertIntoTable(db, ts, pl) {
 			`);*/
 			runQueries(db);
 	});
+	/*db.exec(`
+		insert into testTable (timestamp, payload)
+			values ('${ts}', ${pl});`, () => {/*${pl});
+		`, () => {
+			/* TODO console.log(`
+			insert into testTable (test_id, name, test_flag)
+				values (${id}, '${name}', '${flag}');
+			`);*//*
+			runQueries(db);
+	});*/
 }
 
 function runQueries(db) {
@@ -85,9 +93,9 @@ function runQueries(db) {
 	
 	// TODO console.log('--------------------------------------------------------------');
 	
-	db.all(`select max(timestamp) from testTable;`, (err, rows) => {
+	db.all(`select max(timestamp), payload from testTable;`, (err, rows) => {
 		//rows.forEach(row => {
-		console.log('max(timestamp): ' + rows[0]['max(timestamp)']);
+		console.log('max(timestamp):', rows[0]['max(timestamp)'], '\npayload:', rows[0]['payload']);
 		//});
 	}); 
 	
