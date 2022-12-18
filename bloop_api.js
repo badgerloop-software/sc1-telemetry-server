@@ -1,6 +1,7 @@
 import { Router } from "express";
 import TEST_RESPONSE from "./test-response.json" assert { type: "json" };
 import sqlite3 from "sqlite3"; // TODO For database
+import url from "url";
 
 
 
@@ -189,6 +190,29 @@ ROUTER.get("/get-entry-count", (req, res) => {
 	
 });
 
+
+ROUTER.get("/get-new-rows/*", (req, res) => {
+	console.log("Requested new rows"); // TODO
+	
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	console.log("Path ", reqPath);
+	
+	// Get the requester's most recent timestamp from request path
+	const pathParts = reqPath.split('/');
+	const latestTimestamp = pathParts[pathParts.length - 1];
+	
+	console.log("Most recent timestamp ", latestTimestamp);
+	
+	// Send rows entered after the provided timestamp to the requester
+	test_db.all(`select * from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
+		const temp = res.send({ response: rows }).status(200);
+	});
+});
 
 
 export default ROUTER;
