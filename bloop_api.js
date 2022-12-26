@@ -60,11 +60,17 @@ function createTable(db, table_name) {
 }
 
 // TODO Add table name parameter
-function insertIntoTable(db, ts, pl) {
+function insertIntoTable(db, table, ts, pl) {
 	console.log('Inserting entry');
-	db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {
+
+	/* db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {
+			runQueries(db);
+	});*/
+
+	db.run(`insert into ${table} (timestamp, payload) values (?, ?);`, ts, pl, () => {
 			runQueries(db);
 	});
+
 	/*db.exec(`
 		insert into testTable (timestamp, payload)
 			values ('${ts}', ${pl});`, () => {/*${pl});
@@ -149,7 +155,8 @@ ROUTER.post("/add-data", (req, res) => {
 	req.on('data', (data) => {
 		// TODO console.log('received data: ', data);
 		
-		insertIntoTable(test_db, parseInt(datasetTime), data);
+		// TODO insertIntoTable(test_db, parseInt(datasetTime), data);
+		insertIntoTable(test_db, 'testTable', parseInt(datasetTime), data);
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
@@ -240,6 +247,7 @@ ROUTER.get("/get-new-row-count/*", (req, res) => {
 
 
 // TODO Don't think this will be used for anything other than testing, so get request should be fine, even though nothing's being retrieved
+// Drop specified table
 ROUTER.get("/drop-table/*", (req, res) => {
 	// Parse the request
 	const request = url.parse(req.url, true);
@@ -260,6 +268,7 @@ ROUTER.get("/drop-table/*", (req, res) => {
 });
 
 
+// Lists all table names
 ROUTER.get("/list-tables", (req, res) => {
 	console.log("Requested list of table names"); // TODO
 	
@@ -270,6 +279,7 @@ ROUTER.get("/list-tables", (req, res) => {
 });
 
 
+// Gets the latest table that has a timestamp for a name
 ROUTER.get("/newest-timestamp-table", (req, res) => {
 	console.log("Requested most recent table (with timestamp as name)"); // TODO
 	
@@ -295,6 +305,9 @@ ROUTER.get("/newest-timestamp-table", (req, res) => {
 
 
 // TODO Change to post or put
+// Add specified table to database
+// 		- Adds an underscore to given name
+// 		- Drops leading 0s from numeric names
 ROUTER.get("/add-table/*", (req, res) => {
 	console.log("Adding new table"); // TODO
 
@@ -323,7 +336,7 @@ ROUTER.get("/add-table/*", (req, res) => {
 });
 
 
-// HTTP request (FOR TESTING USAGE) for uploading datasets to the server
+// (EXPERIMENTAL - Testing duplicate to avoid interfering with add-data request) HTTP request for uploading datasets to the server
 ROUTER.post("/exp-add-data", (req, res) => {
 	console.log('add-data request');
 
@@ -343,7 +356,7 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	const identifiers = headers['content-disposition'].split(',');
 	const rawTableName = identifiers[0].split('=')[1]; // TODO Might be better (for testing and consistency) to specify table name somewhere other than in the headers. Being able to quickly check success of requests using URL would be nice
 	// TODO Could make the URL like this: /add-data/* -> /add-data/<table_name>[/<timestamp>]
-	const tableName = (_isNumeric(rawTableName) ? '_' : '') + rawTableName;
+	const tableName = (_isNumeric(rawTableName) ? '_' : '') + rawTableName; // TODO Should I add an underscore here or leave it to the user to include an underscore in the request?
 	const datasetTime = identifiers[1].split('=')[1];
 
 	console.log("Table name:", tableName, "\t\tDataset time:", datasetTime);
@@ -375,7 +388,7 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	req.on('data', (data) => {
 		// TODO console.log('received data: ', data);
 		
-		insertIntoTable(test_db, parseInt(datasetTime), data);
+		insertIntoTable(test_db, tableName, parseInt(datasetTime), data);
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
@@ -394,6 +407,21 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	console.log(req.headers);
 	console.log(filepath);*/
 });
+
+
+/* TODO Remove
+ROUTER.get("/quick-count-test", (req, res) => {
+	test_db.all(`select count(timestamp) as "field1", null as "field2" from _quickTest union select max(timestamp) as "field1", payload as "field2" from _quickTest;`, (err, rows) => {
+		// TODO console.log('count(timestamp):', rows[0]['count(timestamp)']);
+		
+		// TODO const temp = res.send({ response: test_response, count: rows[0]['count(timestamp)'] }).status(200);
+		
+		console.log('count(timestamp):', rows[0]['field1']);
+
+		const temp = res.send({ count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
+	});
+	
+});*/
 
 
 
