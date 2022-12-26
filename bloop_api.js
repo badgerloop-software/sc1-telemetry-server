@@ -1,14 +1,19 @@
 import { Router } from "express";
-import TEST_RESPONSE from "./test-response.json" assert { type: "json" };
+// TODO import TEST_RESPONSE from "./test-response.json" assert { type: "json" };
 import sqlite3 from "sqlite3"; // TODO For database
 import url from "url";
 
 
 
+// --------------------------------------- HELPER FUNCTIONS --------------------------------------
+
+function _isNumeric(val) {
+	return /^\d+$/.test(val);
+}
+
+
+
 // --------------------------------------- SQLITE3 DATABASE --------------------------------------
-
-
-
 
 // TODO Make the file (or table) name be the UNIX timestamp of the first packet/connection from the solar car.
 // 		The initial timestamp/file (or table) name could be in the header from the HTTP request.
@@ -27,7 +32,7 @@ let test_db = new sqlite3.Database('./' + dbFile, (err) => {// TODO sqlite3.OPEN
 	}
 	
 	console.log('created the database in the first function');
-	createTable(test_db);
+	createTable(test_db, "testTable");
 });
 
 
@@ -38,22 +43,23 @@ function createDatabase() {
 			// TODO exit(1);
 		}
 		console.log('created the database');
-		createTable(test_db);
+		createTable(test_db, "testTable");
 	});
 }
 
-function createTable(db) {
+function createTable(db, table_name) {
 	// TODO Maybe change TEXT to INTEGER for the time so that we can use UNIX timestamps (the curr_msec in sc1-driver-io)??
 	db.exec(
-		`create table testTable (
+		`create table if not exists ${table_name} (
 			timestamp	INTEGER	PRIMARY KEY	NOT NULL,
 			payload		BLOB	NOT NULL
 		);`,
 		() => {
-			console.log('Created the table');
+			console.log('Created table', table_name);
 	});
 }
 
+// TODO Add table name parameter
 function insertIntoTable(db, ts, pl) {
 	console.log('Inserting entry');
 	db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {
@@ -71,6 +77,7 @@ function insertIntoTable(db, ts, pl) {
 	});*/
 }
 
+// TODO If this function is used, add table name as a parameter
 function runQueries(db) {
 	/*TODO db.all(`
 		select test_id, name, test_flag from testTable t
@@ -100,23 +107,10 @@ function runQueries(db) {
 
 // ------------------------------------ HTTP REQUEST HANDLING ------------------------------------
 
-const test_response = TEST_RESPONSE;
-
-let resp_counter = 0;
-
 const ROUTER = Router();
 
 
-ROUTER.get("/api", (req, res) => {
-	resp_counter ++;
-	console.log("Get request", resp_counter);
-	
-	const temp = res.send({ response: test_response, count: resp_counter }).status(200);
-});
-
-
-
-// HTTP request for uploading images to the server
+// HTTP request for uploading datasets to the server
 ROUTER.post("/add-data", (req, res) => {
 	console.log('add-data request');
 
@@ -125,10 +119,234 @@ ROUTER.post("/add-data", (req, res) => {
 	
 	// TODO console.log(headers);
 	
-	// TODO Get session beginning timestamp from headers
-	const sessionTime = headers['content-disposition'].split('=')[1];
+	// TODO Get dataset timestamp from headers
+	const datasetTime = headers['content-disposition'].split('=')[1];
 
-	console.log(sessionTime);
+	// Get file extension from headers
+	// TODO const extension = headers['content-type'].split('/')[1];
+	
+	// Set initial file path
+	/* TODO	let filepath = './' + filename + '.' + extension;
+
+	// Initialize the number of duplicate file paths that exist
+	let numDuplicates = 0;
+	
+	// Add duplicate number to filename if the file already exists
+	while(existsSync(filepath)) {
+		// A duplicate was found, so generate a new file path/name
+		numDuplicates ++;
+		filepath = `./${filename}_${numDuplicates}.${extension}`;
+		
+		// TODO console.log(filepath);
+	}
+
+	console.log("Generated new file: " + filepath);
+
+	*/
+
+
+	// Event handler that runs when data is received from the request
+	req.on('data', (data) => {
+		// TODO console.log('received data: ', data);
+		
+		insertIntoTable(test_db, parseInt(datasetTime), data);
+		
+		// Write data to file
+		// TODO fs.appendFile(filepath, data, (err) => {});
+		//console.log(data);
+	});
+	
+	// Event handler that runs when the request ends
+	req.on('end', () => {
+		console.log('ended');
+		const temp = res.send({ response: 1 }).status(200);
+	});
+	
+
+	/* TODO
+	// TODO console.log(req);
+	console.log(req.headers);
+	console.log(filepath);*/
+});
+
+
+// TODO Add ability to specify table name in request
+ROUTER.get("/get-entry-count", (req, res) => {
+	test_db.all(`select count(timestamp) as "field1", null as "field2" from testTable union select max(timestamp) as "field1", payload as "field2" from testTable;`, (err, rows) => {
+		// TODO console.log('count(timestamp):', rows[0]['count(timestamp)']);
+		
+		// TODO const temp = res.send({ response: test_response, count: rows[0]['count(timestamp)'] }).status(200);
+		
+		console.log('count(timestamp):', rows[0]['field1']);
+
+		const temp = res.send({ count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
+	});
+	
+});
+
+
+// TODO Add ability to specify table name
+ROUTER.get("/get-new-rows/*", (req, res) => {
+	console.log("Requested new rows"); // TODO
+	
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	console.log("Path ", reqPath);
+	
+	// Get the requester's most recent timestamp from request path
+	const pathParts = reqPath.split('/');
+	const latestTimestamp = pathParts[pathParts.length - 1];
+	
+	console.log("Most recent timestamp ", latestTimestamp);
+	
+	// Send rows entered after the provided timestamp to the requester
+	test_db.all(`select * from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
+		const temp = res.send({ response: rows }).status(200);
+	});
+});
+
+
+// TODO Add ability to specify table name
+ROUTER.get("/get-new-row-count/*", (req, res) => {
+	console.log("Requested new row count"); // TODO
+	
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	console.log("Path ", reqPath);
+	
+	// Get the requester's most recent timestamp from request path
+	const pathParts = reqPath.split('/');
+	const latestTimestamp = pathParts[pathParts.length - 1];
+	
+	console.log("Most recent timestamp ", latestTimestamp);
+	
+	// Send rows entered after the provided timestamp to the requester
+	test_db.all(`select count(timestamp) from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
+		const temp = res.send({ response: rows }).status(200);
+	});
+});
+
+
+
+// ------------------------------------ EXPERIMENTAL ------------------------------------------
+
+
+// TODO Don't think this will be used for anything other than testing, so get request should be fine, even though nothing's being retrieved
+ROUTER.get("/drop-table/*", (req, res) => {
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	// Get the table name
+	const pathParts = reqPath.split('/');
+	const tableName = pathParts[pathParts.length - 1];
+
+	console.log("Dropping table", tableName);
+	
+	// Drop specified table
+	test_db.all(`drop table if exists ${tableName};`, (err, rows) => {
+		const temp = res.send({ response: rows }).status(200);
+	});
+});
+
+
+ROUTER.get("/list-tables", (req, res) => {
+	console.log("Requested list of table names"); // TODO
+	
+	// Send existing table names to the requester
+	test_db.all(`select name from sqlite_schema where type='table' order by name;`, (err, rows) => {
+		const temp = res.send({ response: rows }).status(200);
+	});
+});
+
+
+ROUTER.get("/newest-timestamp-table", (req, res) => {
+	console.log("Requested most recent table (with timestamp as name)"); // TODO
+	
+	// Get table names and send the largest numeric name (excluding the initial underscore) as the response
+	test_db.all(`select name from sqlite_schema where type='table';`, (err, rows) => {
+		// Find the largest numeric table name. Not using select statement due to limitations of casting text to integer
+		
+		// Map table names to numeric values, if possible; non-numeric names map to -1
+		const numericTables = rows.map((val) => {
+			if(_isNumeric(val['name'].slice(1))) {
+				return parseInt(val['name'].slice(1), 10);
+			} else {
+				return -1;
+			}
+		});
+
+		console.log('numeric tables:', numericTables);
+		
+		// Send the largest numeric table name as response
+		const temp = res.send({ response: '_' + Math.max(...numericTables) }).status(200);
+	});
+});
+
+
+// TODO Change to post or put
+ROUTER.get("/add-table/*", (req, res) => {
+	console.log("Adding new table"); // TODO
+
+	// TODO Instead of trying to check special cases or allowing decimal names to get mixed up with names that should be timestamps, have a header that specifies whether the provided table name is a timestamp or a raw name for the table. Then, add a prefix to the table name to distinguish each possibility (e.g. 't' for timestamp and 'n' for name)
+	// TODO Would this hinder testing at all?
+	
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	// Get the table name from request path
+	const pathParts = reqPath.split('/'); // TODO Just use ...split('/').at(-1) to get the table name right away
+	const rawTableName = pathParts[pathParts.length - 1];
+	// If raw table name is numeric, strip leading 0s (using parseInt()) to avoid duplicates when parsing table names for ordering later
+	// Add an underscore to the front of the raw name. If raw name is numeric, this is required to make it a valid table name
+	const tableName = '_' + (_isNumeric(rawTableName) ? parseInt(rawTableName) : rawTableName);
+	
+	console.log("Table ", tableName);
+	
+	createTable(test_db, tableName);
+	
+	// Send new table name as response
+	const temp = res.send({ response: tableName }).status(200);
+});
+
+
+// HTTP request (FOR TESTING USAGE) for uploading datasets to the server
+ROUTER.post("/exp-add-data", (req, res) => {
+	console.log('add-data request');
+
+
+	// TODO Create the table first (in startThread()). Wait until a response is received from the server before adding data.
+	// 		Then, insert into it without needing to check if the table exists
+
+
+	// Get headers
+	const headers = req.headers;
+	
+	console.log(headers);
+	
+	// TODO console.log(headers);
+	
+	// TODO Get table name (default is session's beginning timestamp) and dataset timestamp from headers
+	const identifiers = headers['content-disposition'].split(',');
+	const rawTableName = identifiers[0].split('=')[1]; // TODO Might be better (for testing and consistency) to specify table name somewhere other than in the headers. Being able to quickly check success of requests using URL would be nice
+	// TODO Could make the URL like this: /add-data/* -> /add-data/<table_name>[/<timestamp>]
+	const tableName = (_isNumeric(rawTableName) ? '_' : '') + rawTableName;
+	const datasetTime = identifiers[1].split('=')[1];
+
+	console.log("Table name:", tableName, "\t\tDataset time:", datasetTime);
 	
 	// Get file extension from headers
 	// TODO const extension = headers['content-type'].split('/')[1];
@@ -157,7 +375,7 @@ ROUTER.post("/add-data", (req, res) => {
 	req.on('data', (data) => {
 		// TODO console.log('received data: ', data);
 		
-		insertIntoTable(test_db, parseInt(sessionTime), data);
+		insertIntoTable(test_db, parseInt(datasetTime), data);
 		
 		// Write data to file
 		// TODO fs.appendFile(filepath, data, (err) => {});
@@ -167,6 +385,7 @@ ROUTER.post("/add-data", (req, res) => {
 	// Event handler that runs when the request ends
 	req.on('end', () => {
 		console.log('ended');
+		const temp = res.send({ response: 1 }).status(200);
 	});
 	
 
@@ -176,43 +395,6 @@ ROUTER.post("/add-data", (req, res) => {
 	console.log(filepath);*/
 });
 
-
-ROUTER.get("/get-entry-count", (req, res) => {
-	test_db.all(`select count(timestamp) as "field1", null as "field2" from testTable union select max(timestamp) as "field1", payload as "field2" from testTable;`, (err, rows) => {
-		// TODO console.log('count(timestamp):', rows[0]['count(timestamp)']);
-		
-		// TODO const temp = res.send({ response: test_response, count: rows[0]['count(timestamp)'] }).status(200);
-		
-		console.log('count(timestamp):', rows[0]['field1']);
-
-		const temp = res.send({ response: test_response, count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
-	});
-	
-});
-
-
-ROUTER.get("/get-new-rows/*", (req, res) => {
-	console.log("Requested new rows"); // TODO
-	
-	// Parse the request
-	const request = url.parse(req.url, true);
-	
-	// Get the path from the request
-	const reqPath = request.pathname;
-	
-	console.log("Path ", reqPath);
-	
-	// Get the requester's most recent timestamp from request path
-	const pathParts = reqPath.split('/');
-	const latestTimestamp = pathParts[pathParts.length - 1];
-	
-	console.log("Most recent timestamp ", latestTimestamp);
-	
-	// Send rows entered after the provided timestamp to the requester
-	test_db.all(`select * from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
-		const temp = res.send({ response: rows }).status(200);
-	});
-});
 
 
 export default ROUTER;
