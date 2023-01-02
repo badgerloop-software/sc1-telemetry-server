@@ -68,7 +68,7 @@ function insertIntoTable(db, table, ts, pl) {
 	});*/
 
 	db.run(`insert into ${table} (timestamp, payload) values (?, ?);`, ts, pl, () => {
-			runQueries(db);
+			//runQueries(db);
 	});
 
 	/*db.exec(`
@@ -84,7 +84,7 @@ function insertIntoTable(db, table, ts, pl) {
 }
 
 // TODO If this function is used, add table name as a parameter
-function runQueries(db) {
+/* TODO Remove: function runQueries(db) {
 	/*TODO db.all(`
 		select test_id, name, test_flag from testTable t
 		where test_id >= ?`, 2, (err, rows) => {
@@ -92,7 +92,7 @@ function runQueries(db) {
 			// TODO	console.log(row.test_id + '\t' + row.name + '\t' + row.test_flag);
 			// TODO });
 		}
-	);*/
+	);*//*
 	
 	// TODO console.log('--------------------------------------------------------------');
 	
@@ -106,8 +106,8 @@ function runQueries(db) {
 		rows.forEach(row => {
 			console.log(row.test_id + '\t' + row.name + '\t' + row.test_flag);
 		});
-	});*/
-}
+	});*//*
+}*/
 
 
 
