@@ -203,7 +203,7 @@ ROUTER.get("/get-new-rows/*/*", (req, res) => {
 	
 	// Get the path from the request
 	const reqPath = request.pathname;
-	
+
 	console.log("Path ", reqPath);
 	
 	// Get the requester's most recent timestamp from request path
@@ -229,7 +229,7 @@ ROUTER.get("/get-new-rows/*/*", (req, res) => {
 // TODO Maybe change "new" in this (and /get-new-row-count) to "later"
 ROUTER.get("/get-new-rows/*", (req, res) => {
 	console.log("Requested new rows"); // TODO
-	
+
 	// Parse the request
 	const request = url.parse(req.url, true);
 	
@@ -389,11 +389,25 @@ ROUTER.get("/add-table/*", (req, res) => {
 ROUTER.post("/exp-add-data", (req, res) => {
 	console.log('add-data request');
 
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	// TODO const reqPath = request.pathname;
+	
+	// Get the query from the request url
+	const reqQuery = request.query;
+	
+	// Get table name and dataset timestamp from query
+	const tableName = reqQuery['table-name'];
+	const datasetTime = reqQuery['dataset-time'];
+
+
 
 	// TODO Create the table first (in startThread()). Wait until a response is received from the server before adding data.
 	// 		Then, insert into it without needing to check if the table exists
 
-
+/* TODO
 	// Get headers
 	const headers = req.headers;
 	
@@ -401,47 +415,22 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	
 	// TODO console.log(headers);
 	
+	
 	// TODO Get table name (default is session's beginning timestamp) and dataset timestamp from headers
 	const identifiers = headers['content-disposition'].split(',');
 	const tableName = identifiers[0].split('=')[1]; // TODO Might be better (for testing and consistency) to specify table name somewhere other than in the headers. Being able to quickly check success of requests using URL would be nice
 	// TODO Could make the URL like this: /add-data/* -> /add-data/<table_name>[/<timestamp>]
 	// TODO Remove: const tableName = (_isNumeric(rawTableName) ? '_' : '') + rawTableName; // TODO Should I add an underscore here or ***leave it to the user to include an underscore in the request***?
 	const datasetTime = identifiers[1].split('=')[1];
+*/
 
 	console.log("Table name:", tableName, "\t\tDataset time:", datasetTime);
 	
-	// Get file extension from headers
-	// TODO const extension = headers['content-type'].split('/')[1];
-	
-	// Set initial file path
-	/* TODO	let filepath = './' + filename + '.' + extension;
-
-	// Initialize the number of duplicate file paths that exist
-	let numDuplicates = 0;
-	
-	// Add duplicate number to filename if the file already exists
-	while(existsSync(filepath)) {
-		// A duplicate was found, so generate a new file path/name
-		numDuplicates ++;
-		filepath = `./${filename}_${numDuplicates}.${extension}`;
-		
-		// TODO console.log(filepath);
-	}
-
-	console.log("Generated new file: " + filepath);
-
-	*/
-
-
 	// Event handler that runs when data is received from the request
 	req.on('data', (data) => {
 		// TODO console.log('received data: ', data);
 		
 		insertIntoTable(test_db, tableName, parseInt(datasetTime), data);
-		
-		// Write data to file
-		// TODO fs.appendFile(filepath, data, (err) => {});
-		//console.log(data);
 	});
 	
 	// Event handler that runs when the request ends
@@ -449,12 +438,6 @@ ROUTER.post("/exp-add-data", (req, res) => {
 		console.log('ended');
 		const temp = res.send({ response: 1 }).status(200);
 	});
-	
-
-	/* TODO
-	// TODO console.log(req);
-	console.log(req.headers);
-	console.log(filepath);*/
 });
 
 
@@ -471,7 +454,7 @@ ROUTER.get("/get-entry-count/*", (req, res) => {
 
 	test_db.all(`select count(timestamp) as "field1", null as "field2" from ${tableName} union select max(timestamp) as "field1", payload as "field2" from ${tableName};`, (err, rows) => {
 		
-		// TODO NEED TO ADD QUICK ERROR CHECKING TO AVOID CRASHING THE SERVER
+		// TODO SHOULD ADD QUICK ERROR CHECKING TO AVOID CRASHING THE SERVER
 		//      Could check to see if err is null/undefined/whatever it would be when no error occurs
 		
 		console.log('count(timestamp):', rows[0]['field1']);
