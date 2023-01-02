@@ -212,6 +212,7 @@ ROUTER.get("/get-new-rows/*/*", (req, res) => {
 	const tableName = pathParts[pathParts.length - 2];
 	
 	// TODO Check that table exists
+	//      NO. Instead, just check table names in engineering dashboard before getting any data
 	
 	console.log('Most recent timestamp:', latestTimestamp, '\t\tTable name:', tableName);
 	
@@ -282,6 +283,7 @@ ROUTER.get("/get-new-row-count/*", (req, res) => {
 
 // TODO Don't think this will be used for anything other than testing, so get request should be fine, even though nothing's being retrieved
 // Drop specified table
+// USAGE: /drop-table/<table name>
 ROUTER.get("/drop-table/*", (req, res) => {
 	// Parse the request
 	const request = url.parse(req.url, true);
@@ -342,6 +344,7 @@ ROUTER.get("/newest-timestamp-table", (req, res) => {
 // Add specified table to database
 // 		- Adds an underscore to given name
 // 		- Drops leading 0s from numeric names
+// USAGE: /add-table/<table name>
 ROUTER.get("/add-table/*", (req, res) => {
 	console.log("Adding new table"); // TODO
 
