@@ -366,7 +366,7 @@ ROUTER.get("/add-table/*", (req, res) => {
 	
 	// Check if table exists and act accordingly
 	test_db.all(`select name from sqlite_schema where type='table' and name = ?;`, tableName, (err, rows) => {
-		console.log("From tableExists(): rows", rows, '\t\tLength:', rows.length);
+		console.log("Rows from existing table query:", rows, '\t\tLength:', rows.length);
 		if(rows.length > 0) {
 			// Table exists
 			console.log("Table ", tableName, "\t\tExists");
@@ -458,19 +458,27 @@ ROUTER.post("/exp-add-data", (req, res) => {
 });
 
 
-/* TODO Remove
-ROUTER.get("/quick-count-test", (req, res) => {
-	test_db.all(`select count(timestamp) as "field1", null as "field2" from _quickTest union select max(timestamp) as "field1", payload as "field2" from _quickTest;`, (err, rows) => {
-		// TODO console.log('count(timestamp):', rows[0]['count(timestamp)']);
+ROUTER.get("/get-entry-count/*", (req, res) => {
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	// Get the table name from request path
+	const pathParts = reqPath.split('/'); // TODO Just use ...split('/').at(-1) to get the table name right away
+	const tableName = pathParts[pathParts.length - 1];
+
+	test_db.all(`select count(timestamp) as "field1", null as "field2" from ${tableName} union select max(timestamp) as "field1", payload as "field2" from ${tableName};`, (err, rows) => {
 		
-		// TODO const temp = res.send({ response: test_response, count: rows[0]['count(timestamp)'] }).status(200);
+		// TODO NEED TO ADD QUICK ERROR CHECKING TO AVOID CRASHING THE SERVER
+		//      Could check to see if err is null/undefined/whatever it would be when no error occurs
 		
 		console.log('count(timestamp):', rows[0]['field1']);
 
 		const temp = res.send({ count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
 	});
-	
-});*/
+});
 
 
 
