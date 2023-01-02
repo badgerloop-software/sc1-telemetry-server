@@ -83,6 +83,7 @@ function insertIntoTable(db, table, ts, pl) {
 	});*/
 }
 
+
 // TODO If this function is used, add table name as a parameter
 /* TODO Remove: function runQueries(db) {
 	/*TODO db.all(`
@@ -360,15 +361,24 @@ ROUTER.get("/add-table/*", (req, res) => {
 	// Add an underscore to the front of the raw name. If raw name is numeric, this is required to make it a valid table name
 	const tableName = '_' + (_isNumeric(rawTableName) ? parseInt(rawTableName) : rawTableName);
 	
-	console.log("Table ", tableName);
-	
-	// TODO Check if the table already exists and respond with the existing table names if it does
-
-	// Create table with the specified table name
-	createTable(test_db, tableName);
-	
-	// Send new table name as response
-	const temp = res.send({ response: tableName }).status(200);
+	// Check if table exists and act accordingly
+	test_db.all(`select name from sqlite_schema where type='table' and name = ?;`, tableName, (err, rows) => {
+		console.log("From tableExists(): rows", rows, '\t\tLength:', rows.length);
+		if(rows.length > 0) {
+			// Table exists
+			console.log("Table ", tableName, "\t\tExists");
+			// Respond saying table exists
+			const temp = res.send({ response: tableName + " exists" }).status(200);
+		} else {
+			// Table doesn't exist
+			console.log("Table ", tableName, "\t\tDoesn't exist");
+			// Create table with the specified table name
+			createTable(test_db, tableName);
+			
+			// Send new table name as response
+			const temp = res.send({ response: tableName }).status(200);
+		}
+	});
 });
 
 
