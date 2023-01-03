@@ -464,5 +464,28 @@ ROUTER.get("/get-entry-count/*", (req, res) => {
 });
 
 
+ROUTER.get("/get-first-timestamp/*", (req, res) => {
+	// Parse the request
+	const request = url.parse(req.url, true);
+	
+	// Get the path from the request
+	const reqPath = request.pathname;
+	
+	// Get the table name from request path
+	const pathParts = reqPath.split('/'); // TODO Just use ...split('/').at(-1) to get the table name right away
+	const tableName = pathParts[pathParts.length - 1];
+
+	test_db.all(`select min(timestamp) as "first timestamp" from ${tableName};`, (err, rows) => {
+		
+		// TODO SHOULD ADD QUICK ERROR CHECKING TO AVOID CRASHING THE SERVER
+		//      Could check to see if err is null/undefined/whatever it would be when no error occurs
+		
+		console.log('first timestamp:', rows[0]['first timestamp']);
+
+		const temp = res.send({ response: rows[0]['first timestamp'] }).status(200);
+	});
+});
+
+
 
 export default ROUTER;
