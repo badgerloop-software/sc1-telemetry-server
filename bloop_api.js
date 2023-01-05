@@ -15,10 +15,6 @@ function _isNumeric(val) {
 
 // --------------------------------------- SQLITE3 DATABASE --------------------------------------
 
-// TODO Make the file (or table) name be the UNIX timestamp of the first packet/connection from the solar car.
-// 		The initial timestamp/file (or table) name could be in the header from the HTTP request.
-// 		Could/Should also include the file (or table) name (i.e. the initial UNIX timestamp) in every HTTP request header from the solar car.
-
 const dbFile = 'test-bloop.db';
 
 // Open test.db database for reading and writing, or create the database if it doesn't exist
@@ -59,124 +55,17 @@ function createTable(db, table_name) {
 	});
 }
 
-// TODO Add table name parameter
 function insertIntoTable(db, table, ts, pl) {
 	console.log('Inserting entry');
 
-	/* db.run('insert into testTable (timestamp, payload) values (?, ?);', ts, pl, () => {
-			runQueries(db);
-	});*/
-
-	db.run(`insert into ${table} (timestamp, payload) values (?, ?);`, ts, pl, () => {
-			//runQueries(db);
-	});
-
-	/*db.exec(`
-		insert into testTable (timestamp, payload)
-			values ('${ts}', ${pl});`, () => {/*${pl});
-		`, () => {
-			/* TODO console.log(`
-			insert into testTable (test_id, name, test_flag)
-				values (${id}, '${name}', '${flag}');
-			`);*//*
-			runQueries(db);
-	});*/
+	db.run(`insert into ${table} (timestamp, payload) values (?, ?);`, ts, pl, () => {});
 }
-
-
-// TODO If this function is used, add table name as a parameter
-/* TODO Remove: function runQueries(db) {
-	/*TODO db.all(`
-		select test_id, name, test_flag from testTable t
-		where test_id >= ?`, 2, (err, rows) => {
-			// TODO rows.forEach(row => {
-			// TODO	console.log(row.test_id + '\t' + row.name + '\t' + row.test_flag);
-			// TODO });
-		}
-	);*//*
-	
-	// TODO console.log('--------------------------------------------------------------');
-	
-	db.all(`select max(timestamp), payload from testTable;`, (err, rows) => {
-		//rows.forEach(row => {
-		console.log('max(timestamp):', rows[0]['max(timestamp)'], '\npayload:', rows[0]['payload']);
-		//});
-	}); 
-	
-	/*db.all(`select * from testTable;`, (err, rows) => {
-		rows.forEach(row => {
-			console.log(row.test_id + '\t' + row.name + '\t' + row.test_flag);
-		});
-	});*//*
-}*/
 
 
 
 // ------------------------------------ HTTP REQUEST HANDLING ------------------------------------
 
 const ROUTER = Router();
-
-
-// HTTP request for uploading datasets to the server
-ROUTER.post("/add-data", (req, res) => {
-	console.log('add-data request');
-
-	// Get headers
-	const headers = req.headers;
-	
-	// TODO console.log(headers);
-	
-	// TODO Get dataset timestamp from headers
-	const datasetTime = headers['content-disposition'].split('=')[1];
-
-	// Get file extension from headers
-	// TODO const extension = headers['content-type'].split('/')[1];
-	
-	// Set initial file path
-	/* TODO	let filepath = './' + filename + '.' + extension;
-
-	// Initialize the number of duplicate file paths that exist
-	let numDuplicates = 0;
-	
-	// Add duplicate number to filename if the file already exists
-	while(existsSync(filepath)) {
-		// A duplicate was found, so generate a new file path/name
-		numDuplicates ++;
-		filepath = `./${filename}_${numDuplicates}.${extension}`;
-		
-		// TODO console.log(filepath);
-	}
-
-	console.log("Generated new file: " + filepath);
-
-	*/
-
-
-	// Event handler that runs when data is received from the request
-	req.on('data', (data) => {
-		// TODO console.log('received data: ', data);
-		
-		// TODO insertIntoTable(test_db, parseInt(datasetTime), data);
-		insertIntoTable(test_db, 'testTable', parseInt(datasetTime), data);
-		
-		// Write data to file
-		// TODO fs.appendFile(filepath, data, (err) => {});
-		//console.log(data);
-	});
-	
-	// Event handler that runs when the request ends
-	req.on('end', () => {
-		console.log('ended');
-		const temp = res.send({ response: 1 }).status(200);
-	});
-	
-
-	/* TODO
-	// TODO console.log(req);
-	console.log(req.headers);
-	console.log(filepath);*/
-});
-
 
 // TODO Add ability to specify table name in request
 ROUTER.get("/get-entry-count", (req, res) => {
@@ -190,38 +79,6 @@ ROUTER.get("/get-entry-count", (req, res) => {
 		const temp = res.send({ count: rows[0]['field1'], tStamp: rows[1]['field1'], bytes: rows[1]['field2'] }).status(200);
 	});
 });
-
-
-// TODO Remove
-// Get rows from specified table with more recent timestamps than the one specified
-// USAGE: /get-new-rows/<tableName>/<timestamp>
-// NOTE: Alternate form of request (with one parameter) below
-// TODO ROUTER.get("/get-new-rows/*/*", (req, res) => {
-/*	console.log("SPECIFYING TABLE - Requested new rows"); // TODO
-	
-	// Parse the request
-	const request = url.parse(req.url, true);
-	
-	// Get the path from the request
-	const reqPath = request.pathname;
-
-	console.log("Path ", reqPath);
-	
-	// Get the requester's most recent timestamp from request path
-	const pathParts = reqPath.split('/');
-	const latestTimestamp = pathParts[pathParts.length - 1];
-	const tableName = pathParts[pathParts.length - 2];
-	
-	// TODO Check that table exists
-	//      NO. Instead, just check table names in engineering dashboard before getting any data
-	
-	console.log('Most recent timestamp:', latestTimestamp, '\t\tTable name:', tableName);
-	
-	// Send rows entered after the provided timestamp to the requester
-	test_db.all(`select * from ${tableName} where timestamp > ${latestTimestamp};`, (err, rows) => {
-		const temp = res.send({ response: rows }).status(200);
-	});
-});*/
 
 
 // Get rows from testTable or specified table with more recent timestamps than the one specified
@@ -385,15 +242,12 @@ ROUTER.get("/add-table/*", (req, res) => {
 });
 
 
-// (EXPERIMENTAL - Testing duplicate to avoid interfering with add-data request) HTTP request for uploading datasets to the server
-ROUTER.post("/exp-add-data", (req, res) => {
+// HTTP request for uploading datasets to the server
+ROUTER.post("/add-data", (req, res) => {
 	console.log('add-data request');
 
 	// Parse the request
 	const request = url.parse(req.url, true);
-	
-	// Get the path from the request
-	// TODO const reqPath = request.pathname;
 	
 	// Get the query from the request url
 	const reqQuery = request.query;
@@ -411,8 +265,6 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	
 	// Event handler that runs when data is received from the request
 	req.on('data', (data) => {
-		// TODO console.log('received data: ', data);
-		
 		insertIntoTable(test_db, tableName, parseInt(datasetTime), data);
 	});
 	
