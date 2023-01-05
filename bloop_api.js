@@ -192,11 +192,12 @@ ROUTER.get("/get-entry-count", (req, res) => {
 });
 
 
+// TODO Remove
 // Get rows from specified table with more recent timestamps than the one specified
 // USAGE: /get-new-rows/<tableName>/<timestamp>
 // NOTE: Alternate form of request (with one parameter) below
-ROUTER.get("/get-new-rows/*/*", (req, res) => {
-	console.log("SPECIFYING TABLE - Requested new rows"); // TODO
+// TODO ROUTER.get("/get-new-rows/*/*", (req, res) => {
+/*	console.log("SPECIFYING TABLE - Requested new rows"); // TODO
 	
 	// Parse the request
 	const request = url.parse(req.url, true);
@@ -220,12 +221,11 @@ ROUTER.get("/get-new-rows/*/*", (req, res) => {
 	test_db.all(`select * from ${tableName} where timestamp > ${latestTimestamp};`, (err, rows) => {
 		const temp = res.send({ response: rows }).status(200);
 	});
-});
+});*/
 
 
-// Get rows from testTable with more recent timestamps than the one specified
-// USAGE: /get-new-rows/<timestamp>
-// NOTE: Alternate form of request (with two parameters) above
+// Get rows from testTable or specified table with more recent timestamps than the one specified
+// USAGE: /get-new-rows[/<tableName>]/<timestamp>
 // TODO Maybe change "new" in this (and /get-new-row-count) to "later"
 ROUTER.get("/get-new-rows/*", (req, res) => {
 	console.log("Requested new rows"); // TODO
@@ -241,19 +241,19 @@ ROUTER.get("/get-new-rows/*", (req, res) => {
 	// Get the requester's most recent timestamp from request path
 	const pathParts = reqPath.split('/');
 	const latestTimestamp = pathParts[pathParts.length - 1];
+	const tableName = (pathParts.length > 3) ? pathParts[pathParts.length - 2] : 'testTable';
 	
-	console.log("Most recent timestamp ", latestTimestamp);
+	console.log('Most recent timestamp:', latestTimestamp, '\t\tTable name:', tableName);
 	
 	// Send rows entered after the provided timestamp to the requester
-	test_db.all(`select * from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
+	test_db.all(`select * from ${tableName} where timestamp > ${latestTimestamp};`, (err, rows) => {
 		const temp = res.send({ response: rows }).status(200);
 	});
 });
 
 
-// TODO Add ability to specify table name
-// Get the number of rows in testTable with more recent timestamps than the one specified
-// USAGE: /get-new-row-count/<timestamp>
+// Get the number of rows in testTable or specified table with more recent timestamps than the one specified
+// USAGE: /get-new-row-count[/<tableName>]/<timestamp>
 ROUTER.get("/get-new-row-count/*", (req, res) => {
 	console.log("Requested new row count"); // TODO
 	
@@ -267,12 +267,13 @@ ROUTER.get("/get-new-row-count/*", (req, res) => {
 	
 	// Get the requester's most recent timestamp from request path
 	const pathParts = reqPath.split('/');
+	console.log('path parts:', pathParts);
 	const latestTimestamp = pathParts[pathParts.length - 1];
-	
+	const tableName = (pathParts.length > 3) ? pathParts[pathParts.length - 2] : 'testTable';
 	console.log("Most recent timestamp ", latestTimestamp);
 	
 	// Send rows entered after the provided timestamp to the requester
-	test_db.all(`select count(timestamp) from testTable where timestamp > ${latestTimestamp};`, (err, rows) => {
+	test_db.all(`select count(timestamp) from ${tableName} where timestamp > ${latestTimestamp};`, (err, rows) => {
 		const temp = res.send({ response: rows }).status(200);
 	});
 });
@@ -281,7 +282,6 @@ ROUTER.get("/get-new-row-count/*", (req, res) => {
 
 // ------------------------------------ EXPERIMENTAL ------------------------------------------
 
-// TODO Don't think this will be used for anything other than testing, so get request should be fine, even though nothing's being retrieved
 // Drop specified table
 // USAGE: /drop-table/<table name>
 ROUTER.get("/drop-table/*", (req, res) => {
@@ -403,26 +403,9 @@ ROUTER.post("/exp-add-data", (req, res) => {
 	const datasetTime = reqQuery['dataset-time'];
 
 
-
 	// TODO Create the table first (in startThread()). Wait until a response is received from the server before adding data.
 	// 		Then, insert into it without needing to check if the table exists
 
-/* TODO
-	// Get headers
-	const headers = req.headers;
-	
-	console.log(headers);
-	
-	// TODO console.log(headers);
-	
-	
-	// TODO Get table name (default is session's beginning timestamp) and dataset timestamp from headers
-	const identifiers = headers['content-disposition'].split(',');
-	const tableName = identifiers[0].split('=')[1]; // TODO Might be better (for testing and consistency) to specify table name somewhere other than in the headers. Being able to quickly check success of requests using URL would be nice
-	// TODO Could make the URL like this: /add-data/* -> /add-data/<table_name>[/<timestamp>]
-	// TODO Remove: const tableName = (_isNumeric(rawTableName) ? '_' : '') + rawTableName; // TODO Should I add an underscore here or ***leave it to the user to include an underscore in the request***?
-	const datasetTime = identifiers[1].split('=')[1];
-*/
 
 	console.log("Table name:", tableName, "\t\tDataset time:", datasetTime);
 	
