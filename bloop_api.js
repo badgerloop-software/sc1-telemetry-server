@@ -227,17 +227,15 @@ ROUTER.get("/add-table/*", (req, res) => {
 		if(rows.length > 0) {
 			// Table exists
 			console.log("Table ", tableName, "\t\tExists");
-			// Respond saying table exists
-			const temp = res.send({ response: tableName + " exists" }).status(200);
 		} else {
 			// Table doesn't exist
 			console.log("Table ", tableName, "\t\tDoesn't exist");
 			// Create table with the specified table name
 			createTable(test_db, tableName);
-			
-			// Send new table name as response
-			const temp = res.send({ response: tableName }).status(200);
 		}
+		
+		// Send table name as a response
+		const temp = res.send({ response: tableName }).status(200);
 	});
 });
 
